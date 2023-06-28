@@ -1,0 +1,85 @@
+[filename1, pathname1] = uigetfile({'.jpg;.png;.bmp','Image Files (.jpg, *.png, *.bmp)'},'Select the first image file');
+
+fullfilename1 = fullfile(pathname1, filename1);
+
+image1 = imread(fullfilename1);
+
+[filename2, pathname2] = uigetfile({'.jpg;.png;.bmp','Image Files (.jpg, *.png, *.bmp)'},'Select the second image file');
+
+fullfilename2 = fullfile(pathname2, filename2);
+
+image2 = imread(fullfilename2);
+
+ 
+
+% Find the SURF features and descriptors for both images
+
+if ~isempty(ver('vision'))
+
+points1 = detectSURFFeatures(grayImage1);
+
+[features1, points1] = extractFeatures(grayImage1, points1);
+
+points2 = detectSURFFeatures(grayImage2);
+
+[features2, points2] = extractFeatures(grayImage2, points2);
+
+ 
+
+% Match the features between the two images
+
+indexPairs = matchFeatures(features1, features2, 'MatchThreshold', 20);
+
+ 
+
+% Select the matched points
+
+matchedPoints1 = points1(indexPairs(:, 1));
+
+matchedPoints2 = points2(indexPairs(:, 2));
+
+ 
+
+% Estimate the transformation between the two images
+
+tform = estimateGeometricTransform(matchedPoints2, matchedPoints1, 'affine');
+
+else
+
+error('Computer Vision Toolbox is required for this example.');
+
+end
+
+ 
+
+% Apply the transformation to one of the images
+
+registeredImage = imwarp(image2, tform, 'OutputView', imref2d(size(image1)));
+
+ 
+
+% Convert the images to double precision
+
+image1 = im2double(image1);
+
+image2 = im2double(image2);
+
+ 
+
+% Fuse the two images
+
+fused_image = imfuse(image1, image2, 'blend');
+
+ 
+
+% Display the results
+
+figure;
+
+subplot(2,2,1); imshow(image1); title('Image 1');
+
+subplot(2,2,2); imshow(image2); title('Image 2');
+
+subplot(2,2,3); imshow(registeredImage); title('Registered Image');
+
+subplot(2,2,4); imshow(fused_image); title('Fused Image');
